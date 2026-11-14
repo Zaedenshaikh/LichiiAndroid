@@ -44,13 +44,18 @@ jobs:
 
       - name: Print environment info
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
-          ls -la $ANDROID_NDK_HOME 2>/dev/null || echo "NDK not found"
-          which cmake
-          cmake --version
-          which ndk-build
-          ndk-build --version 2>/dev/null || true
+          echo "ANDROID_HOME=${ANDROID_HOME:-not set}"
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-not set}"
+          if [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
+            ls -la "$ANDROID_NDK_HOME"
+          else
+            echo "NDK directory not found at ANDROID_NDK_HOME"
+          fi
+          which cmake || echo "cmake not in PATH"
+          cmake --version || echo "cmake --version failed"
+          which ndk-build || echo "ndk-build not in PATH"
+          ndk-build --version 2>/dev/null || echo "ndk-build --version failed"
+        shell: bash
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace --info
@@ -96,13 +101,18 @@ jobs:
 
       - name: Print environment info
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
-          ls -la $ANDROID_NDK_HOME 2>/dev/null || echo "NDK not found"
-          which cmake
-          cmake --version
-          which ndk-build
-          ndk-build --version 2>/dev/null || true
+          echo "ANDROID_HOME=${ANDROID_HOME:-not set}"
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-not set}"
+          if [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
+            ls -la "$ANDROID_NDK_HOME"
+          else
+            echo "NDK directory not found at ANDROID_NDK_HOME"
+          fi
+          which cmake || echo "cmake not in PATH"
+          cmake --version || echo "cmake --version failed"
+          which ndk-build || echo "ndk-build not in PATH"
+          ndk-build --version 2>/dev/null || echo "ndk-build --version failed"
+        shell: bash
 
       - name: Build nxformat for Android ARM64
         run: |
@@ -121,6 +131,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/app/src/main/jniLibs/arm64-v8a
           cp libnxformat.so ${{ github.workspace }}/app/src/main/jniLibs/arm64-v8a/
           ls -la ${{ github.workspace }}/app/src/main/jniLibs/arm64-v8a/
+        shell: bash
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
