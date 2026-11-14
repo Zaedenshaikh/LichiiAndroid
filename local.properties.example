@@ -1,0 +1,3 @@
+# Local properties - copy to local.properties and update paths
+# sdk.dir=/Users/username/Library/Android/sdk
+# ndk.dir=/Users/username/Library/Android/sdk/ndk/26.1.10909125

@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Lichii NX Explorer</string>
+    <string name="open_archive">Open Archive</string>
+    <string name="close_archive">Close Archive</string>
+    <string name="extract_file">Extract File</string>
+    <string name="view_hex">View Hex</string>
+    <string name="parent_directory">Parent Directory</string>
+    <string name="empty_directory">This directory is empty</string>
+    <string name="loading_archive">Loading archive…</string>
+    <string name="error_loading">Error loading archive</string>
+    <string name="retry">Retry</string>
+    <string name="no_archive_open">No Archive Opened</string>
+    <string name="open_sample_asset">Open Sample Asset</string>
+    <string name="archive_info">Archive Info</string>
+    <string name="generation">Generation</string>
+    <string name="archive_size">Archive Size</string>
+    <string name="block_count">Block Count</string>
+    <string name="media_records">Media Records</string>
+    <string name="has_media">Has Media</string>
+    <string name="file_size">File Size</string>
+    <string name="chunk_size">Chunk Size</string>
+    <string name="digest">SHA-256 Digest</string>
+</resources>
