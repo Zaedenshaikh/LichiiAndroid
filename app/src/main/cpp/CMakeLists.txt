@@ -13,10 +13,10 @@ if(ANDROID)
     endif()
 endif()
 
-# Include directories
+# Include directories - use local nxformat headers
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Lichii/externals/nxformat
+    ${CMAKE_CURRENT_SOURCE_DIR}/nxformat
 )
 
 # JNI wrapper library
