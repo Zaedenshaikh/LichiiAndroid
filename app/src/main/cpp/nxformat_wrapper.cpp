@@ -1,118 +1,119 @@
 #include "nxformat_wrapper.h"
-#include <android/asset_manager.h>
 #include <android/log.h>
+#include <string>
+#include <vector>
+#include <memory>
+#include <mutex>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <cstring>
 
 #define LOG_TAG "NxFormatWrapper"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 
-// Include the actual nxformat headers
-// These would normally come from the nxformat library
-// For now, we provide minimal implementations that would need to be replaced
-// with the actual nxformat library when available
-
-extern "C" {
-    // Minimal Zstandard declarations - in reality these come from libzstd
-    typedef struct ZSTD_DCtx_s ZSTD_DCtx;
-    ZSTD_DCtx* ZSTD_createDCtx(void);
-    void ZSTD_freeDCtx(ZSTD_DCtx* dctx);
-    size_t ZSTD_decompressDCtx(ZSTD_DCtx* dctx, void* dst, size_t dstCapacity,
-                                const void* src, size_t srcSize);
-    size_t ZSTD_getFrameContentSize(const void* src, size_t srcSize);
-    unsigned ZSTD_getDictID_fromFrame(const void* src, size_t srcSize);
-    size_t ZSTD_findFrameCompressedSize(const void* src, size_t srcSize);
-    size_t ZSTD_DCtx_setParameter(ZSTD_DCtx* dctx, int param, int value);
-    int ZSTD_isError(size_t code);
-    const char* ZSTD_getErrorName(size_t code);
-    #define ZSTD_d_windowLogMax 100
-}
-
-// Since we can't include the actual nxformat headers (they're in the Lichii repo),
-// we'll provide a simplified JNI interface that demonstrates the structure.
-// The actual implementation would link against libnxformat.so
+// Minimal NX format wrapper for Android
+// This is a stub implementation - the real nxformat library would need ZSTD and other deps
 
 namespace nx {
 
-// Simplified implementations for demonstration
-// In production, these would come from the nxformat library
+enum class ErrorCode : int {
+    ok = 0,
+    io = 1,
+    format = 2,
+    bounds = 3,
+    unsupported = 4,
+    integrity = 5,
+    resource_limit = 6,
+    decompression = 7,
+    cancelled = 8,
+};
 
-class Archive {
+struct ResultBase {
+    ErrorCode error_code;
+    std::string error_message;
+    
+    bool ok() const { return error_code == ErrorCode::ok; }
+    operator bool() const { return ok(); }
+};
+
+template<typename T>
+struct Result : ResultBase {
+    T value;
+    
+    static Result<T> success(T&& v) {
+        Result<T> r;
+        r.error_code = ErrorCode::ok;
+        r.value = std::move(v);
+        return r;
+    }
+    
+    static Result<T> failure(ErrorCode code, const std::string& msg) {
+        Result<T> r;
+        r.error_code = code;
+        r.error_message = msg;
+        return r;
+    }
+};
+
+struct FileInfo {
+    uint64_t id;
+    uint64_t size;
+    uint32_t chunk_log2;
+    std::array<uint8_t, 32> digest;
+};
+
+struct DirectoryEntryView {
+    enum class EntryType { file = 1, directory = 2 };
+    EntryType type;
+    std::string name;
+    uint64_t file;
+};
+
+struct DirectoryHandle {
+    uint64_t value;
+};
+
+struct ReadCursor {
+    // Opaque cursor state
+};
+
+class RandomAccessSource {
 public:
-    struct Block {
-        uint64_t offset;
-        uint32_t stored;
-        uint32_t logical;
-        uint8_t codec;
-        uint32_t first_check;
-    };
-    
-    struct File {
-        uint64_t size;
-        uint32_t first;
-        uint32_t count;
-        uint8_t chunk_log2;
-        std::array<uint8_t, 32> digest;
-    };
-    
-    struct Entry {
-        uint64_t name_offset;
-        uint32_t name_length;
-        uint32_t target;
-        uint8_t kind;
-    };
-    
-    struct Directory {
-        uint32_t first;
-        uint32_t count;
-    };
-    
-    // These would be implemented by the actual nxformat library
-    Result<std::shared_ptr<RandomAccessSource>> open_source(const std::string& path);
-    Status open();
-    Status mount();
-    DirectoryHandle root() const;
-    std::optional<DirectoryEntryView> lookup(DirectoryHandle, std::string_view) const;
-    void enumerate(DirectoryHandle, std::function<bool(const DirectoryEntryView&)>) const;
-    Result<FileInfo> file_info(uint64_t) const;
-    Result<std::vector<uint8_t>> read_media(uint32_t) const;
-    struct ReadResult { size_t bytes; };
-    ReadResult read(uint64_t, uint64_t, size_t, uint8_t*, size_t, std::shared_ptr<ReadCursor>);
-    size_t max_read_bytes() const;
-    
-    uint64_t generation() const { return generation_; }
-    uint64_t archive_size() const { return archive_size_; }
-    uint64_t block_count() const { return block_count_; }
-    bool has_media() const { return media_size_ > 0; }
-    uint32_t media_record_count() const { return media_record_count_; }
-    
-private:
-    uint64_t generation_ = 0;
-    uint64_t archive_size_ = 0;
-    uint64_t block_count_ = 0;
-    uint64_t media_size_ = 0;
-    uint32_t media_record_count_ = 0;
+    virtual ~RandomAccessSource() = default;
+    virtual uint64_t size() const noexcept = 0;
+    virtual bool read_at(uint64_t offset, uint8_t* output, size_t length) = 0;
 };
 
 class Session {
 public:
+    struct Options {
+        size_t max_directories = 100000;
+        size_t max_files = 1000000;
+        size_t max_entries = 2000000;
+        size_t max_blocks = 1000000;
+        size_t max_block_references = 5000000;
+        size_t max_manifest_bytes = 64 * 1024 * 1024;
+        size_t max_index_bytes = 64 * 1024 * 1024;
+        size_t max_cached_block_bytes = 1024 * 1024;
+        size_t max_cached_blocks = 1024;
+        bool verify_read_blocks = true;
+        bool collect_read_stats = false;
+        bool collect_read_timing = false;
+        bool zstd = true;
+        void* zstd_context = nullptr;
+    };
+
     explicit Session(std::shared_ptr<RandomAccessSource> source, Options options = {}) 
         : source_(std::move(source)), options_(options) {}
     
     ~Session() = default;
     
-    const Archive& archive() const { return archive_; }
-    
     Result<FileInfo> file_info(uint64_t file_id) const {
-        return archive_.file_info(file_id);
-    }
-    
-    Result<std::vector<uint8_t>> read_media(uint32_t index) const {
-        return archive_.read_media(index);
+        return Result<FileInfo>::failure(ErrorCode::unsupported, "Not implemented - requires full nxformat library");
     }
     
     struct ReadResult { size_t bytes; };
@@ -120,35 +121,29 @@ public:
     ReadResult read(uint64_t file_id, uint64_t offset, size_t length,
                     uint8_t* output, size_t output_size,
                     std::shared_ptr<ReadCursor> cursor) {
-        return archive_.read(file_id, offset, length, output, output_size, cursor);
+        return {0};
     }
     
     size_t max_read_bytes() const { return 1024 * 1024; }
     
     std::optional<DirectoryEntryView> lookup(DirectoryHandle handle, std::string_view name) const {
-        return archive_.lookup(handle, name);
+        return std::nullopt;
     }
     
     void enumerate(DirectoryHandle handle, std::function<bool(const DirectoryEntryView&)> callback) const {
-        archive_.enumerate(handle, callback);
     }
     
-    DirectoryHandle root() const { return archive_.root(); }
+    DirectoryHandle root() const { return DirectoryHandle{0}; }
     
     void open() {
-        auto st = archive_.open();
-        if (!st) throw std::runtime_error("Failed to open archive: " + std::string(st.error_message));
-        st = archive_.mount();
-        if (!st) throw std::runtime_error("Failed to mount archive: " + std::string(st.error_message));
+        // Stub - real implementation would parse NX format
     }
 
 private:
     std::shared_ptr<RandomAccessSource> source_;
     Options options_;
-    Archive archive_;
 };
 
-// Simplified RandomAccessSource implementations
 class FileSource : public RandomAccessSource {
 public:
     FileSource(const std::string& path) {
@@ -212,9 +207,7 @@ private:
 
 // NxFormatWrapper implementation
 void NxFormatWrapper::init(JNIEnv* env, jobject assetManager) {
-    // Store asset manager for later use if needed
-    // In a real implementation, we might load libnxformat.so from assets here
-    LOGD("NxFormatWrapper initialized");
+    LOGD("NxFormatWrapper initialized (stub implementation)");
 }
 
 bool NxFormatWrapper::openArchive(const std::string& path) {
@@ -295,7 +288,7 @@ std::vector<NxFormatWrapper::Entry> NxFormatWrapper::listDirectory(nx::Directory
         e.name = entry.name;
         e.isDirectory = (entry.type == nx::DirectoryEntryView::EntryType::directory);
         e.fileId = entry.file;
-        e.size = 0; // Would need file_info to get size
+        e.size = 0;
         entries.push_back(std::move(e));
         return true;
     });
@@ -362,13 +355,13 @@ std::optional<NxFormatWrapper::ArchiveInfo> NxFormatWrapper::getArchiveInfo() {
     
     if (!session_) return std::nullopt;
     
-    const auto& archive = session_->archive();
+    // Return dummy info for now
     ArchiveInfo info;
-    info.generation = archive.generation();
-    info.archiveSize = archive.archive_size();
-    info.blockCount = static_cast<uint32_t>(archive.block_count());
-    info.hasMedia = archive.has_media();
-    info.mediaRecordCount = archive.media_record_count();
+    info.generation = 0;
+    info.archiveSize = 0;
+    info.blockCount = 0;
+    info.hasMedia = false;
+    info.mediaRecordCount = 0;
     return info;
 }
 

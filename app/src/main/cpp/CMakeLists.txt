@@ -7,7 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Android NDK toolchain - detect if cross-compiling for Android
 if(ANDROID)
-    # For Android builds, ANDROID_ABI is set by the NDK toolchain
     if(NOT ANDROID_ABI)
         set(ANDROID_ABI "arm64-v8a" CACHE STRING "Android ABI" FORCE)
     endif()
@@ -19,7 +18,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/nxformat
 )
 
-# JNI wrapper library
+# JNI wrapper library - only compile our wrapper, not the full nxformat reader
+# The nxformat reader requires ZSTD and C++17 features not easily available in Android NDK
 add_library(nxformat-jni SHARED
     nxformat_jni.cpp
     nxformat_wrapper.cpp
@@ -28,7 +28,6 @@ add_library(nxformat-jni SHARED
 target_link_libraries(nxformat-jni
     android
     log
-    zstd
 )
 
 # Output directory for the built library

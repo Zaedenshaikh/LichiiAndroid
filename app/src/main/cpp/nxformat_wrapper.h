@@ -8,7 +8,7 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
-// Forward declarations for the nxformat C++ reader
+// Forward declarations for minimal nxformat types
 namespace nx {
     enum class ErrorCode : int {
         ok = 0,
@@ -100,18 +100,9 @@ namespace nx {
         explicit Session(std::shared_ptr<RandomAccessSource> source, Options options = {});
         ~Session();
 
-        // Archive access
-        const class Archive& archive() const;
-        
-        // File operations
         Result<FileInfo> file_info(uint64_t file_id) const;
-        Result<std::vector<uint8_t>> read_media(uint32_t index) const;
         
-        // Reading
-        struct ReadResult {
-            size_t bytes;
-            bool operator!() const { return bytes == 0; }
-        };
+        struct ReadResult { size_t bytes; };
         
         ReadResult read(uint64_t file_id, uint64_t offset, size_t length, 
                         uint8_t* output, size_t output_size, 
@@ -119,18 +110,14 @@ namespace nx {
         
         size_t max_read_bytes() const;
         
-        // Directory enumeration
         std::optional<DirectoryEntryView> lookup(DirectoryHandle handle, std::string_view name) const;
         void enumerate(DirectoryHandle handle, std::function<bool(const DirectoryEntryView&)> callback) const;
         
-        // Root directory
         DirectoryHandle root() const;
+        
+        void open();
     };
 
-    // Zstandard decoder callback
-    using ZstdCallback = bool(*)(void* context, const uint8_t* compressed, size_t compressed_size,
-                                  uint8_t* output, size_t output_size,
-                                  size_t* written, size_t* consumed);
 } // namespace nx
 
 // JNI wrapper class
@@ -217,7 +204,7 @@ private:
         bool read_at(uint64_t offset, uint8_t* output, size_t length) override;
     private:
         AAsset* asset_;
-        off_t assetSize_;
+        off64_t assetSize_;
     };
     
     // File-based source
