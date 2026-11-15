@@ -1,11 +1,6 @@
 package com.eden.lichii.nxformat.ui
 
-import android.content.ContentResolver
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,7 +30,9 @@ import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
 
-    private val mainViewModel: MainViewModel by viewModel()
+    private val mainViewModel: MainViewModel by viewModel {
+        MainViewModel(application, NxFormatNative.getInstance(application.applicationContext))
+    }
     private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { mainViewModel.onFileSelected(it) }
     }

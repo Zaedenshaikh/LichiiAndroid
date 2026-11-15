@@ -1,5 +1,10 @@
 package com.eden.lichii.nxformat.model
 
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import androidx.lifecycle.AndroidViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -34,8 +39,9 @@ data class ArchiveEntry(
 )
 
 class MainViewModel(
+    application: Application,
     private val nxFormat: NxFormatNative
-) : androidx.lifecycle.ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Closed)
     val uiState = _uiState
@@ -54,11 +60,11 @@ class MainViewModel(
         // openAsset("sample.nx")
     }
 
-    fun onFileSelected(uri: android.net.Uri) {
+    fun onFileSelected(uri: Uri) {
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                val contentResolver = getApplication<android.app.Application>().contentResolver
+                val contentResolver = application.contentResolver
                 val fd = contentResolver.openFileDescriptor(uri, "r")?.fileDescriptor
                 if (fd != null) {
                     val path = "/proc/self/fd/${fd}"
@@ -80,7 +86,7 @@ class MainViewModel(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                val context = getApplication<android.app.Application>()
+                val context = application.applicationContext
                 if (nxFormat.openAsset(context.assets, assetName)) {
                     loadRoot()
                 } else {
@@ -138,8 +144,8 @@ class MainViewModel(
                 val data = nxFormat.readFile(fileId)
                 if (data != null) {
                     // Save to downloads or app-specific directory
-                    val context = getApplication<android.app.Application>()
-                    val downloadsDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    val context = application.applicationContext
+                    val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
                         ?: context.filesDir
                     val file = java.io.File(downloadsDir, name)
                     file.writeBytes(data)
