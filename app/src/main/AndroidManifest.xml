@@ -4,7 +4,6 @@
 
     <application
         android:label="@string/app_name"
-        android:theme="@style/Theme.LichiiAndroid"
         android:allowBackup="true"
         android:supportsRtl="true">
 
@@ -12,7 +11,6 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.LichiiAndroid"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
