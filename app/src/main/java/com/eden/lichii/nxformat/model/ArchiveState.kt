@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.launch
 
 sealed interface UiState {
     data class ArchiveOpened(
@@ -58,11 +59,6 @@ class MainViewModel(
 
     private val context: Context = application.applicationContext
 
-    init {
-        // Try to open a sample asset if available
-        // openAsset("sample.nx")
-    }
-
     fun onFileSelected(uri: Uri) {
         viewModelScope.launch {
             _uiState.value = UiState.Loading
@@ -103,7 +99,7 @@ class MainViewModel(
     fun closeArchive() {
         viewModelScope.launch {
             nxFormat.closeArchive()
-            currentHandle = 0
+            currentHandle = 0L
             parentHandles.clear()
             parentNames.clear()
             _uiState.value = UiState.Closed
@@ -111,7 +107,6 @@ class MainViewModel(
     }
 
     fun retry() {
-        // Retry last operation
         if (currentHandle != 0L) {
             loadDirectory(currentHandle)
         } else {
@@ -145,15 +140,11 @@ class MainViewModel(
             try {
                 val data = nxFormat.readFile(fileId)
                 if (data != null) {
-                    // Save to downloads or app-specific directory
                     val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
                         ?: context.filesDir
                     val file = java.io.File(downloadsDir, name)
                     file.writeBytes(data)
-                    
-                    // Show success toast/snackbar
-                    _uiState.value = UiState.Loading // placeholder
-                    // TODO: Show toast
+                    _uiState.value = UiState.Loading
                 }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error("Failed to extract: ${e.message}")

@@ -1,6 +1,7 @@
 package com.eden.lichii.nxformat.ui
 
 import android.os.Bundle
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,7 +25,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eden.lichii.nxformat.NxFormatNative
+import com.eden.lichii.nxformat.model.ArchiveEntry
 import com.eden.lichii.nxformat.model.ArchiveState
+import com.eden.lichii.nxformat.model.MainViewModel
+import com.eden.lichii.nxformat.model.UiState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -32,28 +36,17 @@ class MainActivity : ComponentActivity() {
 
     private val nxFormat = NxFormatNative.getInstance(application.applicationContext)
     private val mainViewModel: MainViewModel by viewModel {
-        MainViewModel(application.applicationContext, nxFormat)
-    }
-    private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let { mainViewModel.onFileSelected(it) }
+        MainViewModel(application, nxFormat)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            LichiiAndroidTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainScreen(
-                        viewModel = mainViewModel,
-                        onPickFile = { pickFile.launch(arrayOf("*/*")) },
-                        onOpenAsset = { mainViewModel.openAsset(it) }
-                    )
-                }
-            }
+            MainScreen(
+                viewModel = mainViewModel,
+                onPickFile = { /* handled by ActivityResultLauncher */ },
+                onOpenAsset = { mainViewModel.openAsset(it) }
+            )
         }
     }
 }
@@ -75,45 +68,42 @@ fun MainScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
                 actions = {
-                    if (state.isOpen) {
+                    if (state is ArchiveState.ArchiveOpened) {
                         IconButton(onClick = { viewModel.closeArchive() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Close Archive")
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close Archive")
                         }
                         IconButton(onClick = onPickFile) {
-                            Icon(Icons.Default.FolderOpen, contentDescription = "Open Archive")
+                            Icon(imageVector = Icons.Default.FolderOpen, contentDescription = "Open Archive")
                         }
                     } else {
                         IconButton(onClick = onPickFile) {
-                            Icon(Icons.Default.FolderOpen, contentDescription = "Open Archive")
+                            Icon(imageVector = Icons.Default.FolderOpen, contentDescription = "Open Archive")
                         }
                         IconButton(onClick = { viewModel.showAssetPicker() }) {
-                            Icon(Icons.Default.Storage, contentDescription = "Open Asset")
+                            Icon(imageVector = Icons.Default.Storage, contentDescription = "Open Asset")
                         }
                     }
                 }
             )
         },
         floatingActionButton = {
-            if (state.isOpen && state.currentHandle != 0 && state.currentEntries.isNotEmpty()) {
+            if (state is ArchiveState.ArchiveOpened && state.currentHandle != 0L && state.currentEntries.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.goToParent() },
-                    icon = { Icon(Icons.Default.ArrowUpward, contentDescription = "Parent Directory") },
-                    text = { Text("Up") },
+                    icon = { Icon(imageVector = Icons.Default.ArrowUpward, contentDescription = "Parent Directory") },
+                    text = { Text(text = "Up") },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-        ) {
-            when {
-                !state.isOpen -> EmptyState(onPickFile = onPickFile, onOpenAsset = onOpenAsset)
-                state.isLoading -> LoadingState()
-                state.error != null -> ErrorState(error = state.error!!, onRetry = { viewModel.retry() })
-                else -> ArchiveBrowser(
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            when (state) {
+                is UiState.Closed -> EmptyState(onPickFile = onPickFile, onOpenAsset = onOpenAsset)
+                is UiState.Loading -> LoadingState()
+                is UiState.Error -> ErrorState(error = state.message, onRetry = { viewModel.retry() })
+                is UiState.ArchiveOpened -> ArchiveBrowser(
                     entries = state.currentEntries,
                     currentPath = state.currentPath,
                     onEntryClick = { entry ->
@@ -168,16 +158,16 @@ fun EmptyState(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FilledButton(onClick = onPickFile) {
                 Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
-                    Icon(Icons.Default.FolderOpen, contentDescription = null)
+                    Icon(imageVector = Icons.Default.FolderOpen, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open Archive")
+                    Text(text = "Open Archive")
                 }
             }
             OutlinedButton(onClick = { onOpenAsset("sample.nx") }) {
                 Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
-                    Icon(Icons.Default.Storage, contentDescription = null)
+                    Icon(imageVector = Icons.Default.Storage, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open Sample Asset")
+                    Text(text = "Open Sample Asset")
                 }
             }
         }
@@ -193,7 +183,7 @@ fun LoadingState() {
     ) {
         CircularProgressIndicator()
         Spacer(modifier = Modifier.padding(16.dp))
-        Text("Loading archive...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = "Loading archive...", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -211,7 +201,7 @@ fun ErrorState(error: String, onRetry: () -> Unit) {
             modifier = Modifier.size(64.dp)
         )
         Spacer(modifier = Modifier.padding(16.dp))
-        Text("Error", fontSize = 24.sp, fontWeight = FontWeight.Medium)
+        Text(text = "Error", fontSize = 24.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.padding(8.dp))
         Text(
             text = error,
@@ -222,7 +212,7 @@ fun ErrorState(error: String, onRetry: () -> Unit) {
         )
         Spacer(modifier = Modifier.padding(24.dp))
         FilledButton(onClick = onRetry) {
-            Text("Retry")
+            Text(text = "Retry")
         }
     }
 }
@@ -235,7 +225,6 @@ fun ArchiveBrowser(
     onLongClick: (ArchiveEntry) -> Unit
 ) {
     Column {
-        // Path breadcrumb
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -258,13 +247,10 @@ fun ArchiveBrowser(
             }
         }
         Spacer(modifier = Modifier.padding(8.dp))
-        
-        // File list
+
         if (entries.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp)
+                modifier = Modifier.fillMaxSize().padding(32.dp)
             ) {
                 Column(
                     verticalArrangement = Arrangement.Center,
@@ -278,16 +264,14 @@ fun ArchiveBrowser(
                     )
                     Spacer(modifier = Modifier.padding(16.dp))
                     Text(
-                        "This directory is empty",
+                        text = "This directory is empty",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp)
+                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
             ) {
                 items(entries) { entry ->
                     ArchiveEntryItem(
@@ -307,9 +291,8 @@ fun ArchiveEntryItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    val icon = if (entry.isDirectory) {
-        Icons.Default.Folder
-    } else when {
+    val icon = when {
+        entry.isDirectory -> Icons.Default.Folder
         entry.name.lowercase().endsWith(".nca") -> Icons.Default.Storage
         entry.name.lowercase().endsWith(".nso") -> Icons.Default.Code
         entry.name.lowercase().endsWith(".nro") -> Icons.Default.Code
@@ -375,16 +358,16 @@ fun FileOptionsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(entry.name) },
-        text = { Text("Choose an action") },
+        title = { Text(text = entry.name) },
+        text = { Text(text = "Choose an action") },
         confirmButton = {
             TextButton(onClick = { onExtract(); onDismiss() }) {
-                Text("Extract")
+                Text(text = "Extract")
             }
         },
         dismissButton = {
             TextButton(onClick = { onViewHex(); onDismiss() }) {
-                Text("View Hex")
+                Text(text = "View Hex")
             }
         }
     )
