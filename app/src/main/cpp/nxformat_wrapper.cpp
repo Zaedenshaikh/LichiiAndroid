@@ -15,135 +15,40 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 
-// Minimal NX format wrapper for Android
-// This is a stub implementation - the real nxformat library would need ZSTD and other deps
-
 namespace nx {
 
-enum class ErrorCode : int {
-    ok = 0,
-    io = 1,
-    format = 2,
-    bounds = 3,
-    unsupported = 4,
-    integrity = 5,
-    resource_limit = 6,
-    decompression = 7,
-    cancelled = 8,
-};
-
-struct ResultBase {
-    ErrorCode error_code;
-    std::string error_message;
-    
-    bool ok() const { return error_code == ErrorCode::ok; }
-    operator bool() const { return ok(); }
-};
-
-template<typename T>
-struct Result : ResultBase {
-    T value;
-    
-    static Result<T> success(T&& v) {
-        Result<T> r;
-        r.error_code = ErrorCode::ok;
-        r.value = std::move(v);
-        return r;
-    }
-    
-    static Result<T> failure(ErrorCode code, const std::string& msg) {
-        Result<T> r;
-        r.error_code = code;
-        r.error_message = msg;
-        return r;
-    }
-};
-
-struct FileInfo {
-    uint64_t id;
-    uint64_t size;
-    uint32_t chunk_log2;
-    std::array<uint8_t, 32> digest;
-};
-
-struct DirectoryEntryView {
-    enum class EntryType { file = 1, directory = 2 };
-    EntryType type;
-    std::string name;
-    uint64_t file;
-};
-
-struct DirectoryHandle {
-    uint64_t value;
-};
-
-struct ReadCursor {
-    // Opaque cursor state
-};
-
-class RandomAccessSource {
+// AssetSource implementation
+class AssetSource : public RandomAccessSource {
 public:
-    virtual ~RandomAccessSource() = default;
-    virtual uint64_t size() const noexcept = 0;
-    virtual bool read_at(uint64_t offset, uint8_t* output, size_t length) = 0;
-};
-
-class Session {
-public:
-    struct Options {
-        size_t max_directories = 100000;
-        size_t max_files = 1000000;
-        size_t max_entries = 2000000;
-        size_t max_blocks = 1000000;
-        size_t max_block_references = 5000000;
-        size_t max_manifest_bytes = 64 * 1024 * 1024;
-        size_t max_index_bytes = 64 * 1024 * 1024;
-        size_t max_cached_block_bytes = 1024 * 1024;
-        size_t max_cached_blocks = 1024;
-        bool verify_read_blocks = true;
-        bool collect_read_stats = false;
-        bool collect_read_timing = false;
-        bool zstd = true;
-        void* zstd_context = nullptr;
-    };
-
-    explicit Session(std::shared_ptr<RandomAccessSource> source, Options options = {}) 
-        : source_(std::move(source)), options_(options) {}
-    
-    ~Session() = default;
-    
-    Result<FileInfo> file_info(uint64_t file_id) const {
-        return Result<FileInfo>::failure(ErrorCode::unsupported, "Not implemented - requires full nxformat library");
+    AssetSource(AAsset* asset) : asset_(asset) {
+        assetSize_ = AAsset_getLength64(asset);
     }
     
-    struct ReadResult { size_t bytes; };
-    
-    ReadResult read(uint64_t file_id, uint64_t offset, size_t length,
-                    uint8_t* output, size_t output_size,
-                    std::shared_ptr<ReadCursor> cursor) {
-        return {0};
+    ~AssetSource() {
+        if (asset_) AAsset_close(asset_);
     }
     
-    size_t max_read_bytes() const { return 1024 * 1024; }
-    
-    std::optional<DirectoryEntryView> lookup(DirectoryHandle handle, std::string_view name) const {
-        return std::nullopt;
+    uint64_t size() const noexcept override {
+        return static_cast<uint64_t>(assetSize_);
     }
     
-    void enumerate(DirectoryHandle handle, std::function<bool(const DirectoryEntryView&)> callback) const {
+    bool read_at(uint64_t offset, uint8_t* output, size_t length) override {
+        if (offset > static_cast<uint64_t>(assetSize_) || 
+            length > static_cast<uint64_t>(assetSize_) - offset) return false;
+        
+        off_t seek = AAsset_seek64(asset_, static_cast<off64_t>(offset), SEEK_SET);
+        if (seek < 0) return false;
+        
+        int read = AAsset_read(asset_, output, length);
+        return read == static_cast<int>(length);
     }
     
-    DirectoryHandle root() const { return DirectoryHandle{0}; }
-    
-    void open() {
-        // Stub - real implementation would parse NX format
-    }
-
 private:
-    std::shared_ptr<RandomAccessSource> source_;
-    Options options_;
+    AAsset* asset_;
+    off64_t assetSize_;
 };
 
+// FileSource implementation
 class FileSource : public RandomAccessSource {
 public:
     FileSource(const std::string& path) {
@@ -162,7 +67,9 @@ public:
         if (fd_ >= 0) close(fd_);
     }
     
-    uint64_t size() const noexcept override { return fileSize_; }
+    uint64_t size() const noexcept override {
+        return fileSize_;
+    }
     
     bool read_at(uint64_t offset, uint8_t* output, size_t length) override {
         if (offset > fileSize_ || length > fileSize_ - offset) return false;
@@ -175,33 +82,47 @@ private:
     uint64_t fileSize_ = 0;
 };
 
-class AssetSource : public RandomAccessSource {
-public:
-    AssetSource(AAsset* asset) : asset_(asset) {
-        assetSize_ = AAsset_getLength64(asset);
-    }
-    
-    ~AssetSource() {
-        if (asset_) AAsset_close(asset_);
-    }
-    
-    uint64_t size() const noexcept override { return static_cast<uint64_t>(assetSize_); }
-    
-    bool read_at(uint64_t offset, uint8_t* output, size_t length) override {
-        if (offset > static_cast<uint64_t>(assetSize_) || 
-            length > static_cast<uint64_t>(assetSize_) - offset) return false;
-        
-        off_t seek = AAsset_seek64(asset_, static_cast<off64_t>(offset), SEEK_SET);
-        if (seek < 0) return false;
-        
-        int read = AAsset_read(asset_, output, length);
-        return read == static_cast<int>(length);
-    }
-    
-private:
-    AAsset* asset_;
-    off64_t assetSize_;
-};
+// Session implementation
+Session::Session(std::shared_ptr<RandomAccessSource> source)
+    : source_(std::move(source)) {
+    Options default_options;
+    options_ = default_options;
+}
+
+Session::Session(std::shared_ptr<RandomAccessSource> source, Options options)
+    : source_(std::move(source)), options_(options) {
+}
+
+Session::~Session() = default;
+
+Result<FileInfo> Session::file_info(uint64_t file_id) const {
+    return Result<FileInfo>::failure(4, "Not implemented - requires full nxformat library");
+}
+
+Session::ReadResult Session::read(uint64_t file_id, uint64_t offset, size_t length,
+                    uint8_t* output, size_t output_size,
+                    std::shared_ptr<ReadCursor> cursor) {
+    return {0};
+}
+
+size_t Session::max_read_bytes() const {
+    return 1024 * 1024;
+}
+
+std::optional<DirectoryEntryView> Session::lookup(DirectoryHandle handle, std::string_view name) const {
+    return std::nullopt;
+}
+
+void Session::enumerate(DirectoryHandle handle, std::function<bool(const DirectoryEntryView&)> callback) const {
+}
+
+DirectoryHandle Session::root() const {
+    return DirectoryHandle{0};
+}
+
+void Session::open() {
+    // Stub - real implementation would parse NX format
+}
 
 } // namespace nx
 
