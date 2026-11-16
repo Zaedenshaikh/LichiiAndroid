@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material.icons.filled.Default
+import androidx.compose.material.icons.filled.Default as IconsDefault
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -29,7 +30,6 @@ import com.eden.lichii.nxformat.model.ArchiveEntry
 import com.eden.lichii.nxformat.model.ArchiveState
 import com.eden.lichii.nxformat.model.MainViewModel
 import com.eden.lichii.nxformat.model.UiState
-import androidx.compose.ui.unit.TextOverflow
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -70,10 +70,10 @@ fun MainScreen(
                 actions = {
                     if (state is ArchiveState.ArchiveOpened) {
                         IconButton(onClick = { viewModel.closeArchive() }) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close Archive")
+                            Icon(imageVector = IconsDefault.Close, contentDescription = "Close Archive")
                         }
                         IconButton(onClick = onPickFile) {
-                            Icon(imageVector = Icons.Default.FolderOpen, contentDescription = "Open Archive")
+                            Icon(imageVector = IconsDefault.FolderOpen, contentDescription = "Open Archive")
                         }
                     } else {
                         IconButton(onClick = onPickFile) {
@@ -90,7 +90,7 @@ fun MainScreen(
             if (state is ArchiveState.ArchiveOpened && state.currentHandle != 0L && state.currentEntries.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.goToParent() },
-                    icon = { Icon(imageVector = Icons.Default.ArrowUpward, contentDescription = "Parent Directory") },
+                    icon = { Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Parent Directory") },
                     text = { Text(text = "Up") },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer

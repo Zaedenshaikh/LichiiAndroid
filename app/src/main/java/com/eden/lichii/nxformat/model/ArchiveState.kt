@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eden.lichii.nxformat.NxFormatNative
+import com.eden.lichii.nxformat.ArchiveInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -23,7 +24,7 @@ sealed interface UiState {
         val currentHandle: Long = 0,
         val parentHandles: List<Long> = emptyList(),
         val parentNames: List<String> = emptyList(),
-        val archiveInfo: NxFormatNative.ArchiveInfo? = null
+        val archiveInfo: ArchiveInfo? = null
     ) : UiState
 
     object Loading : UiState
