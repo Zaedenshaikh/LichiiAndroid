@@ -1,10 +1,9 @@
 package com.eden.lichii.nxformat.model
 
-import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -39,9 +38,9 @@ data class ArchiveEntry(
 )
 
 class MainViewModel(
-    application: Application,
+    private val context: Context,
     private val nxFormat: NxFormatNative
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Closed)
     val uiState = _uiState
@@ -54,8 +53,6 @@ class MainViewModel(
     private var currentHandle = 0L
     private var parentHandles = mutableListOf<Long>()
     private var parentNames = mutableListOf<String>()
-
-    private val context: Context = application.applicationContext
 
     init {
         // Try to open a sample asset if available
