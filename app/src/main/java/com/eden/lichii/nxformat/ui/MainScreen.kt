@@ -30,6 +30,7 @@ import com.eden.lichii.nxformat.model.ArchiveEntry
 import com.eden.lichii.nxformat.model.ArchiveState
 import com.eden.lichii.nxformat.model.MainViewModel
 import com.eden.lichii.nxformat.model.UiState
+import androidx.compose.ui.unit.TextOverflow
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -77,10 +78,10 @@ fun MainScreen(
                         }
                     } else {
                         IconButton(onClick = onPickFile) {
-                            Icon(imageVector = Icons.Default.FolderOpen, contentDescription = "Open Archive")
+                            Icon(imageVector = IconsDefault.FolderOpen, contentDescription = "Open Archive")
                         }
                         IconButton(onClick = { viewModel.showAssetPicker() }) {
-                            Icon(imageVector = Icons.Default.Storage, contentDescription = "Open Asset")
+                            Icon(imageVector = IconsDefault.Storage, contentDescription = "Open Asset")
                         }
                     }
                 }
@@ -90,7 +91,7 @@ fun MainScreen(
             if (state is ArchiveState.ArchiveOpened && state.currentHandle != 0L && state.currentEntries.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.goToParent() },
-                    icon = { Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Parent Directory") },
+                    icon = { Icon(imageVector = IconsDefault.ChevronRight, contentDescription = "Parent Directory") },
                     text = { Text(text = "Up") },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -135,7 +136,7 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.Default.Description,
+            imageVector = IconsDefault.Description,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(96.dp)
@@ -158,14 +159,14 @@ fun EmptyState(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FilledButton(onClick = onPickFile) {
                 Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
-                    Icon(imageVector = Icons.Default.FolderOpen, contentDescription = null)
+                    Icon(imageVector = IconsDefault.FolderOpen, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Open Archive")
                 }
             }
             OutlinedButton(onClick = { onOpenAsset("sample.nx") }) {
                 Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
-                    Icon(imageVector = Icons.Default.Storage, contentDescription = null)
+                    Icon(imageVector = IconsDefault.Storage, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Open Sample Asset")
                 }
@@ -195,7 +196,7 @@ fun ErrorState(error: String, onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.Default.Error,
+            imageVector = IconsDefault.Error,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier.size(64.dp)
@@ -256,7 +257,7 @@ fun ArchiveBrowser(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Inbox,
+                        imageVector = IconsDefault.Inbox,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(48.dp)
@@ -291,12 +292,12 @@ fun ArchiveEntryItem(
     onLongClick: () -> Unit
 ) {
     val icon = when {
-        entry.isDirectory -> Icons.Default.Folder
-        entry.name.lowercase().endsWith(".nca") -> Icons.Default.Storage
-        entry.name.lowercase().endsWith(".nso") -> Icons.Default.Code
-        entry.name.lowercase().endsWith(".nro") -> Icons.Default.Code
-        entry.name.lowercase().endsWith(".png") || entry.name.lowercase().endsWith(".jpg") -> Icons.Default.Image
-        else -> Icons.Default.Description
+        entry.isDirectory -> IconsDefault.Folder
+        entry.name.lowercase().endsWith(".nca") -> IconsDefault.Storage
+        entry.name.lowercase().endsWith(".nso") -> IconsDefault.Code
+        entry.name.lowercase().endsWith(".nro") -> IconsDefault.Code
+        entry.name.lowercase().endsWith(".png") || entry.name.lowercase().endsWith(".jpg") -> IconsDefault.Image
+        else -> IconsDefault.Description
     }
 
     Card(
@@ -339,7 +340,7 @@ fun ArchiveEntryItem(
             }
             if (entry.isDirectory) {
                 Icon(
-                    imageVector = Icons.Default.ChevronRight,
+                    imageVector = IconsDefault.ChevronRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
