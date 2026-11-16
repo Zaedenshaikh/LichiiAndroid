@@ -20,7 +20,7 @@ namespace nx {
 // AssetSource implementation
 class AssetSource : public RandomAccessSource {
 public:
-    AssetSource(AAsset* asset) : asset_(asset) {
+    explicit AssetSource(AAsset* asset) : asset_(asset) {
         assetSize_ = AAsset_getLength64(asset);
     }
     
@@ -51,7 +51,7 @@ private:
 // FileSource implementation
 class FileSource : public RandomAccessSource {
 public:
-    FileSource(const std::string& path) {
+    explicit FileSource(const std::string& path) {
         fd_ = open(path.c_str(), O_RDONLY | O_CLOEXEC);
         if (fd_ < 0) throw std::runtime_error("Failed to open file: " + path);
         

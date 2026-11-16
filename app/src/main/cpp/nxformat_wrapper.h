@@ -68,20 +68,20 @@ public:
 class Session {
 public:
     struct Options {
-        size_t max_directories = 100000;
-        size_t max_files = 1000000;
-        size_t max_entries = 2000000;
-        size_t max_blocks = 1000000;
-        size_t max_block_references = 5000000;
-        size_t max_manifest_bytes = 64 * 1024 * 1024;
-        size_t max_index_bytes = 64 * 1024 * 1024;
-        size_t max_cached_block_bytes = 1024 * 1024;
-        size_t max_cached_blocks = 1024;
-        bool verify_read_blocks = true;
-        bool collect_read_stats = false;
-        bool collect_read_timing = false;
-        bool zstd = true;
-        void* zstd_context = nullptr;
+        size_t max_directories;
+        size_t max_files;
+        size_t max_entries;
+        size_t max_blocks;
+        size_t max_block_references;
+        size_t max_manifest_bytes;
+        size_t max_index_bytes;
+        size_t max_cached_block_bytes;
+        size_t max_cached_blocks;
+        bool verify_read_blocks;
+        bool collect_read_stats;
+        bool collect_read_timing;
+        bool zstd;
+        void* zstd_context;
     };
 
     explicit Session(std::shared_ptr<RandomAccessSource> source);
@@ -90,7 +90,7 @@ public:
 
     Result<FileInfo> file_info(uint64_t file_id) const;
     
-    struct ReadResult { size_t bytes; bool operator!() const { return bytes == 0; } };
+    struct ReadResult { size_t bytes; };
     
     ReadResult read(uint64_t file_id, uint64_t offset, size_t length, 
                     uint8_t* output, size_t output_size, 
