@@ -1,6 +1,7 @@
 package com.eden.lichii.nxformat.ui
 
 import android.os.Bundle
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Default
-import androidx.compose.material.icons.outlined.Default as DefaultOutlined
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +57,7 @@ fun MainScreen(
     onPickFile: () -> Unit,
     onOpenAsset: (String) -> Unit
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -236,7 +236,6 @@ fun ArchiveBrowser(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
             ) {
                 Text(
                     text = currentPath,
