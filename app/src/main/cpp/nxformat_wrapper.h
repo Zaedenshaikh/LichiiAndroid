@@ -90,7 +90,7 @@ public:
 
     Result<FileInfo> file_info(uint64_t file_id) const;
     
-    struct ReadResult { size_t bytes; };
+    struct ReadResult { size_t bytes; bool operator!() const { return bytes == 0; } };
     
     ReadResult read(uint64_t file_id, uint64_t offset, size_t length, 
                     uint8_t* output, size_t output_size, 
@@ -110,4 +110,56 @@ private:
     Options options_;
 };
 
-}
+} // namespace nx
+
+class NxFormatWrapper {
+public:
+    static NxFormatWrapper& instance();
+    
+    void init(JNIEnv* env, jobject assetManager);
+    bool openArchive(const std::string& path);
+    bool openAsset(JNIEnv* env, jobject assetManager, const std::string& assetName);
+    void closeArchive();
+    bool isOpen() const;
+    
+    nx::DirectoryHandle getRootHandle() const;
+    
+    struct Entry {
+        std::string name;
+        bool isDirectory;
+        uint64_t size;
+        uint64_t fileId;
+    };
+    
+    std::vector<Entry> listDirectory(nx::DirectoryHandle handle);
+    
+    struct FileInfo {
+        uint64_t id;
+        uint64_t size;
+        uint32_t chunkLog2;
+        std::vector<uint8_t> digest;
+    };
+    
+    std::optional<FileInfo> getFileInfo(uint64_t fileId);
+    
+    std::vector<uint8_t> readFile(uint64_t fileId, uint64_t offset, size_t length);
+    std::vector<uint8_t> readFile(uint64_t fileId);
+    
+    struct ArchiveInfo {
+        uint64_t generation;
+        uint64_t archiveSize;
+        uint32_t blockCount;
+        bool hasMedia;
+        uint32_t mediaRecordCount;
+    };
+    
+    std::optional<ArchiveInfo> getArchiveInfo();
+    
+    std::string getLastError() const;
+    
+private:
+    mutable std::mutex mutex_;
+    std::unique_ptr<nx::Session> session_;
+    std::shared_ptr<nx::RandomAccessSource> source_;
+    std::string lastError_;
+};
