@@ -10,12 +10,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eden.lichii.nxformat.NxFormatNative
-import com.eden.lichii.nxformat.ArchiveInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+
+data class ArchiveEntry(
+    val fileId: Long,
+    val name: String,
+    val isDirectory: Boolean,
+    val size: Long
+)
+
+data class ArchiveInfo(
+    val generation: Long,
+    val archiveSize: Long,
+    val blockCount: Int,
+    val mediaRecordCount: Int,
+    val hasMedia: Boolean
+)
 
 sealed interface UiState {
     data class ArchiveOpened(
@@ -33,13 +47,6 @@ sealed interface UiState {
 
     object Closed : UiState
 }
-
-data class ArchiveEntry(
-    val fileId: Long,
-    val name: String,
-    val isDirectory: Boolean,
-    val size: Long
-)
 
 class MainViewModel(
     application: Application,
