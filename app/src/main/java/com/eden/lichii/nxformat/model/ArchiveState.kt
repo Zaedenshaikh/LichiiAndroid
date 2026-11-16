@@ -49,7 +49,7 @@ class MainViewModel(
     private val _uiState = MutableStateFlow<UiState>(UiState.Closed)
     val uiState = _uiState
         .stateIn(
-            scope = viewModelScope.coroutineContext,
+            scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = UiState.Closed
         )

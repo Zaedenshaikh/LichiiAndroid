@@ -30,7 +30,6 @@ import com.eden.lichii.nxformat.model.ArchiveEntry
 import com.eden.lichii.nxformat.model.ArchiveState
 import com.eden.lichii.nxformat.model.MainViewModel
 import com.eden.lichii.nxformat.model.UiState
-import androidx.compose.ui.unit.TextOverflow
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
