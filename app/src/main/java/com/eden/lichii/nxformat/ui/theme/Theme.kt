@@ -5,6 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFFBB86FC),
@@ -28,10 +29,6 @@ private val DarkColorScheme = darkColorScheme(
     onSurfaceVariant = Color(0xFFCAC4D0),
     outline = Color(0xFF79747E),
     outlineVariant = Color(0xFF49454F),
-    inverseSurface = Color(0xFFE6E1E5),
-    inverseOnSurface = Color(0xFF313033),
-    shadow = Color(0xFF000000),
-    scrim = Color(0xFF000000),
     surfaceTint = Color(0xFFBB86FC)
 )
 
@@ -57,10 +54,6 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = Color(0xFF49454F),
     outline = Color(0xFF79747E),
     outlineVariant = Color(0xFFCAC4D0),
-    inverseSurface = Color(0xFF313033),
-    inverseOnSurface = Color(0xFFF5F0F4),
-    shadow = Color(0xFF000000),
-    scrim = Color(0xFF000000),
     surfaceTint = Color(0xFF6200EE)
 )
 

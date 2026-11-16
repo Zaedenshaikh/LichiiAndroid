@@ -1,7 +1,6 @@
 package com.eden.lichii.nxformat.ui
 
 import android.os.Bundle
-import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,6 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Default
+import androidx.compose.material.icons.outlined.Default as DefaultOutlined
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,15 +23,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eden.lichii.nxformat.NxFormatNative
 import com.eden.lichii.nxformat.model.ArchiveEntry
 import com.eden.lichii.nxformat.model.ArchiveState
 import com.eden.lichii.nxformat.model.MainViewModel
 import com.eden.lichii.nxformat.model.UiState
+import androidx.compose.ui.unit.TextOverflow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
 
@@ -328,7 +328,7 @@ fun ArchiveEntryItem(
                     text = entry.name,
                     fontSize = 16.sp,
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (!entry.isDirectory) {
                     Text(
