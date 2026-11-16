@@ -1,9 +1,11 @@
 package com.eden.lichii.nxformat.model
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,11 +25,11 @@ sealed interface UiState {
         val archiveInfo: NxFormatNative.ArchiveInfo? = null
     ) : UiState
 
-    data class Loading : UiState
+    object Loading : UiState
 
     data class Error(val message: String) : UiState
 
-    data class Closed : UiState
+    object Closed : UiState
 }
 
 data class ArchiveEntry(
@@ -38,9 +40,9 @@ data class ArchiveEntry(
 )
 
 class MainViewModel(
-    private val context: Context,
+    application: Application,
     private val nxFormat: NxFormatNative
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Closed)
     val uiState = _uiState
@@ -53,6 +55,8 @@ class MainViewModel(
     private var currentHandle = 0L
     private var parentHandles = mutableListOf<Long>()
     private var parentNames = mutableListOf<String>()
+
+    private val context: Context = application.applicationContext
 
     init {
         // Try to open a sample asset if available
@@ -108,7 +112,7 @@ class MainViewModel(
 
     fun retry() {
         // Retry last operation
-        if (currentHandle != 0) {
+        if (currentHandle != 0L) {
             loadDirectory(currentHandle)
         } else {
             _uiState.value = UiState.Closed
@@ -148,11 +152,7 @@ class MainViewModel(
                     file.writeBytes(data)
                     
                     // Show success toast/snackbar
-                    _uiState.update { state ->
-                        if (state is UiState.ArchiveOpened) {
-                            state.copy()
-                        } else state
-                    }
+                    _uiState.value = UiState.Loading // placeholder
                     // TODO: Show toast
                 }
             } catch (e: Exception) {
