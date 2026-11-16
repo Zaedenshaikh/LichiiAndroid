@@ -55,6 +55,8 @@ class MainViewModel(
     private var parentHandles = mutableListOf<Long>()
     private var parentNames = mutableListOf<String>()
 
+    private val context: Context = application.applicationContext
+
     init {
         // Try to open a sample asset if available
         // openAsset("sample.nx")
@@ -64,7 +66,7 @@ class MainViewModel(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                val contentResolver = application.contentResolver
+                val contentResolver = context.contentResolver
                 val fd = contentResolver.openFileDescriptor(uri, "r")?.fileDescriptor
                 if (fd != null) {
                     val path = "/proc/self/fd/${fd}"
@@ -86,7 +88,6 @@ class MainViewModel(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                val context = application.applicationContext
                 if (nxFormat.openAsset(context.assets, assetName)) {
                     loadRoot()
                 } else {
@@ -144,7 +145,6 @@ class MainViewModel(
                 val data = nxFormat.readFile(fileId)
                 if (data != null) {
                     // Save to downloads or app-specific directory
-                    val context = application.applicationContext
                     val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
                         ?: context.filesDir
                     val file = java.io.File(downloadsDir, name)

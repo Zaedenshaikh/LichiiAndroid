@@ -30,8 +30,9 @@ import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
 
+    private val nxFormat = NxFormatNative.getInstance(application.applicationContext)
     private val mainViewModel: MainViewModel by viewModel {
-        MainViewModel(application, NxFormatNative.getInstance(application.applicationContext))
+        MainViewModel(application, nxFormat)
     }
     private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { mainViewModel.onFileSelected(it) }
