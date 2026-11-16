@@ -85,8 +85,6 @@ private:
 // Session implementation
 Session::Session(std::shared_ptr<RandomAccessSource> source)
     : source_(std::move(source)) {
-    Options default_options;
-    options_ = default_options;
 }
 
 Session::Session(std::shared_ptr<RandomAccessSource> source, Options options)

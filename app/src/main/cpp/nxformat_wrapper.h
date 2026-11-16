@@ -68,25 +68,25 @@ public:
 class Session {
 public:
     struct Options {
-        size_t max_directories;
-        size_t max_files;
-        size_t max_entries;
-        size_t max_blocks;
-        size_t max_block_references;
-        size_t max_manifest_bytes;
-        size_t max_index_bytes;
-        size_t max_cached_block_bytes;
-        size_t max_cached_blocks;
-        bool verify_read_blocks;
-        bool collect_read_stats;
-        bool collect_read_timing;
-        bool zstd;
-        void* zstd_context;
+        size_t max_directories = 100000;
+        size_t max_files = 1000000;
+        size_t max_entries = 2000000;
+        size_t max_blocks = 1000000;
+        size_t max_block_references = 5000000;
+        size_t max_manifest_bytes = 64 * 1024 * 1024;
+        size_t max_index_bytes = 64 * 1024 * 1024;
+        size_t max_cached_block_bytes = 1024 * 1024;
+        size_t max_cached_blocks = 1024;
+        bool verify_read_blocks = true;
+        bool collect_read_stats = false;
+        bool collect_read_timing = false;
+        bool zstd = true;
+        void* zstd_context = nullptr;
     };
 
-    explicit Session(std::shared_ptr<RandomAccessSource> source);
-    explicit Session(std::shared_ptr<RandomAccessSource> source, Options options);
-    ~Session();
+    explicit Session(std::shared_ptr<RandomAccessSource> source) : source_(std::move(source)) {}
+    explicit Session(std::shared_ptr<RandomAccessSource> source, Options options) : source_(std::move(source)), options_(options) {}
+    ~Session() = default;
 
     Result<FileInfo> file_info(uint64_t file_id) const;
     
